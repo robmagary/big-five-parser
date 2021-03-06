@@ -71,7 +71,7 @@ update msg model =
 
                         Err listOfDeadends ->
                             ( Nothing
-                            , Debug.log "parserFeedback" listOfDeadends
+                            , listOfDeadends
                             )
             in
             { model

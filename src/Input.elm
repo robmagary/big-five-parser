@@ -1,15 +1,6 @@
 module Input exposing (Description, Domain(..), Facet(..), parse)
 
-import Parser exposing (..)
-
-
-
--- type Domain
---     = Extraversion
---     | Agreeableness
---     | Conscientiousness
---     | Neuroticism
---     | OpennessToExperience
+import Parser exposing ((|.), (|=), DeadEnd, Parser, chompIf, chompUntil, chompWhile, getChompedString, int, run, succeed)
 
 
 type Domain
@@ -39,10 +30,3 @@ parseDomain =
         |. chompIf (\c -> not <| Char.isDigit c)
         |. chompWhile (\c -> not <| Char.isDigit c)
         |= int
-
-
-
--- succeed Domain
---     |. chompUntil "Domain/Facet...... Score"
---     |. chompWhile Char.isAlpha
---     |= getChompedString (chompUntil ".")
