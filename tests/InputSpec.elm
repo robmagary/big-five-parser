@@ -8,19 +8,19 @@ import TestData
 
 suite : Test
 suite =
-    describe "Parsing Domains"
+    describe "Parsing Descriptions"
         [ test "Single domain data parses EXTRAVERSION 64"
             (\_ ->
                 Expect.equal
-                    (Ok [ Input.Domain "EXTRAVERSION" 64 ])
+                    (Ok [ Input.Description (Input.Domain "EXTRAVERSION" 64) [] ])
                     (parse TestData.singleDomainData)
             )
         , test "Multiple domains data parses EXTRAVERSION 64 and AGREEABLENESS 66"
             (\_ ->
                 Expect.equal
                     (Ok
-                        [ Input.Domain "EXTRAVERSION" 64
-                        , Input.Domain "AGREEABLENESS" 66
+                        [ Input.Description (Input.Domain "EXTRAVERSION" 64) []
+                        , Input.Description (Input.Domain "AGREEABLENESS" 66) []
                         ]
                     )
                     (parse TestData.multipleDomains)

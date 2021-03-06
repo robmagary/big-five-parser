@@ -23,7 +23,7 @@ type Msg
 
 
 type alias Model =
-    { domain : Maybe (List Input.Domain)
+    { descriptions : Maybe (List Input.Description)
     , parserFeedback : List DeadEnd
     , rawData : String
     , uiState : UiState
@@ -32,7 +32,7 @@ type alias Model =
 
 init : Model
 init =
-    { domain = Nothing
+    { descriptions = Nothing
     , parserFeedback = []
     , rawData = ""
     , uiState = InputtingRawData
@@ -62,10 +62,10 @@ update msg model =
 
         ParseRawData ->
             let
-                ( maybeParsedDomain, maybeFeedback ) =
+                ( maybeParsedDescriptions, maybeFeedback ) =
                     case Input.parse model.rawData of
-                        Ok parsedDomain ->
-                            ( Just parsedDomain
+                        Ok parsedDescriptions ->
+                            ( Just parsedDescriptions
                             , []
                             )
 
@@ -76,7 +76,7 @@ update msg model =
             in
             { model
                 | uiState = ParsingRawData
-                , domain = maybeParsedDomain
+                , descriptions = maybeParsedDescriptions
                 , parserFeedback = maybeFeedback
             }
 

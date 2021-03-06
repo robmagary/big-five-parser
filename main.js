@@ -5150,7 +5150,7 @@ var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $author$project$Main$InputtingRawData = {$: 'InputtingRawData'};
 var $elm$core$Maybe$Nothing = {$: 'Nothing'};
-var $author$project$Main$init = {domain: $elm$core$Maybe$Nothing, parserFeedback: _List_Nil, rawData: '', uiState: $author$project$Main$InputtingRawData};
+var $author$project$Main$init = {descriptions: $elm$core$Maybe$Nothing, parserFeedback: _List_Nil, rawData: '', uiState: $author$project$Main$InputtingRawData};
 var $elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
 };
@@ -10789,6 +10789,10 @@ var $elm$parser$Parser$loop = F2(
 					callback(s));
 			});
 	});
+var $author$project$Input$Description = F2(
+	function (domain, facets) {
+		return {domain: domain, facets: facets};
+	});
 var $author$project$Input$Domain = F2(
 	function (a, b) {
 		return {$: 'Domain', a: a, b: b};
@@ -10952,7 +10956,7 @@ var $elm$parser$Parser$Advanced$chompWhile = function (isGood) {
 };
 var $elm$parser$Parser$chompWhile = $elm$parser$Parser$Advanced$chompWhile;
 var $author$project$Input$domains = _List_fromArray(
-	['EXTRAVERSION', 'OPENNESS TO EXPERIENCE', 'NEUROTICISM', 'AGREEABLENESS', 'CONSCIENTIOUSNESS']);
+	['EXTRAVERSION', 'AGREEABLENESS', 'CONSCIENTIOUSNESS', 'NEUROTICISM', 'OPENNESS TO EXPERIENCE']);
 var $elm$parser$Parser$Advanced$mapChompedString = F2(
 	function (func, _v0) {
 		var parse = _v0.a;
@@ -11231,8 +11235,8 @@ var $elm$parser$Parser$Advanced$succeed = function (a) {
 		});
 };
 var $elm$parser$Parser$succeed = $elm$parser$Parser$Advanced$succeed;
-var $author$project$Input$parseDomain = F2(
-	function (rawData, parsedDomains) {
+var $author$project$Input$parseDescription = F2(
+	function (rawData, parsedDescriptions) {
 		var orderedDomains = A3(
 			$elm$core$List$foldl,
 			F2(
@@ -11257,7 +11261,7 @@ var $author$project$Input$parseDomain = F2(
 		var doneAtTheEnd = A2(
 			$elm$parser$Parser$map,
 			function (_v0) {
-				return $elm$parser$Parser$Done(parsedDomains);
+				return $elm$parser$Parser$Done(parsedDescriptions);
 			},
 			$elm$parser$Parser$succeed(_Utils_Tuple0));
 		var domainParserList = A2(
@@ -11276,8 +11280,11 @@ var $author$project$Input$parseDomain = F2(
 											$elm$core$List$reverse(
 												A2(
 													$elm$core$List$cons,
-													A2($author$project$Input$Domain, d, i),
-													parsedDomains)));
+													A2(
+														$author$project$Input$Description,
+														A2($author$project$Input$Domain, d, i),
+														_List_Nil),
+													parsedDescriptions)));
 									})),
 							$elm$parser$Parser$chompUntil(domainString)),
 						A2(
@@ -11301,11 +11308,11 @@ var $author$project$Input$parseDomain = F2(
 			$elm$core$List$reverse(
 				A2($elm$core$List$cons, doneAtTheEnd, domainParserList)));
 	});
-var $author$project$Input$parseDomains = function (rawData) {
+var $author$project$Input$parseDescriptions = function (rawData) {
 	return A2(
 		$elm$parser$Parser$loop,
 		_List_Nil,
-		$author$project$Input$parseDomain(rawData));
+		$author$project$Input$parseDescription(rawData));
 };
 var $elm$parser$Parser$DeadEnd = F3(
 	function (row, col, problem) {
@@ -11369,7 +11376,7 @@ var $elm$parser$Parser$run = F2(
 var $author$project$Input$parse = function (rawData) {
 	return A2(
 		$elm$parser$Parser$run,
-		$author$project$Input$parseDomains(rawData),
+		$author$project$Input$parseDescriptions(rawData),
 		rawData);
 };
 var $author$project$Main$update = F2(
@@ -11383,20 +11390,20 @@ var $author$project$Main$update = F2(
 			var _v1 = function () {
 				var _v2 = $author$project$Input$parse(model.rawData);
 				if (_v2.$ === 'Ok') {
-					var parsedDomain = _v2.a;
+					var parsedDescriptions = _v2.a;
 					return _Utils_Tuple2(
-						$elm$core$Maybe$Just(parsedDomain),
+						$elm$core$Maybe$Just(parsedDescriptions),
 						_List_Nil);
 				} else {
 					var listOfDeadends = _v2.a;
 					return _Utils_Tuple2($elm$core$Maybe$Nothing, listOfDeadends);
 				}
 			}();
-			var maybeParsedDomain = _v1.a;
+			var maybeParsedDescriptions = _v1.a;
 			var maybeFeedback = _v1.b;
 			return _Utils_update(
 				model,
-				{domain: maybeParsedDomain, parserFeedback: maybeFeedback, uiState: $author$project$Main$ParsingRawData});
+				{descriptions: maybeParsedDescriptions, parserFeedback: maybeFeedback, uiState: $author$project$Main$ParsingRawData});
 		}
 	});
 var $author$project$Main$DataInput = function (a) {

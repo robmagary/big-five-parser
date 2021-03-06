@@ -1,6 +1,6 @@
 module Input exposing (Description, Domain(..), Facet(..), parse)
 
-import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompWhile, getChompedString, int, loop, map, oneOf, run, succeed)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompIf, chompUntil, chompWhile, getChompedString, int, loop, map, oneOf, run, succeed)
 
 
 type Domain
@@ -20,25 +20,25 @@ type alias Description =
 domains : List String
 domains =
     [ "EXTRAVERSION"
-    , "OPENNESS TO EXPERIENCE"
-    , "NEUROTICISM"
     , "AGREEABLENESS"
     , "CONSCIENTIOUSNESS"
+    , "NEUROTICISM"
+    , "OPENNESS TO EXPERIENCE"
     ]
 
 
-parse : String -> Result (List DeadEnd) (List Domain)
+parse : String -> Result (List DeadEnd) (List Description)
 parse rawData =
-    run (parseDomains rawData) rawData
+    run (parseDescriptions rawData) rawData
 
 
-parseDomains : String -> Parser (List Domain)
-parseDomains rawData =
-    loop [] (parseDomain rawData)
+parseDescriptions : String -> Parser (List Description)
+parseDescriptions rawData =
+    loop [] (parseDescription rawData)
 
 
-parseDomain : String -> List Domain -> Parser (Step (List Domain) (List Domain))
-parseDomain rawData parsedDomains =
+parseDescription : String -> List Description -> Parser (Step (List Description) (List Description))
+parseDescription rawData parsedDescriptions =
     let
         orderedDomains =
             List.foldl
@@ -68,7 +68,7 @@ parseDomain rawData parsedDomains =
         domainParserList =
             List.map
                 (\domainString ->
-                    succeed (\d i -> Loop <| List.reverse (Domain d i :: parsedDomains))
+                    succeed (\d i -> Loop <| List.reverse (Description (Domain d i) [] :: parsedDescriptions))
                         |. chompUntil domainString
                         |= getChompedString (chompUntil ".")
                         |. chompIf (\c -> not <| Char.isDigit c)
@@ -78,7 +78,7 @@ parseDomain rawData parsedDomains =
                 orderedDomains
 
         doneAtTheEnd =
-            succeed () |> map (\_ -> Done parsedDomains)
+            succeed () |> map (\_ -> Done parsedDescriptions)
     in
     oneOf
         (List.reverse <|
