@@ -1,6 +1,6 @@
 module Input exposing (Description, Domain(..), Facet(..), parse)
 
-import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompIf, chompUntil, chompWhile, getChompedString, int, loop, map, oneOf, run, succeed)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompUntilEndOr, chompWhile, getChompedString, int, loop, map, oneOf, run, succeed)
 
 
 type Domain
@@ -68,20 +68,43 @@ parseDescription rawData parsedDescriptions =
         domainParserList =
             List.map
                 (\domainString ->
-                    succeed (\d i -> Loop <| List.reverse (Description (Domain d i) [] :: parsedDescriptions))
+                    succeed
+                        (\d i facets -> Loop (Description (Domain d i) facets :: parsedDescriptions))
                         |. chompUntil domainString
                         |= getChompedString (chompUntil ".")
                         |. chompIf (\c -> not <| Char.isDigit c)
                         |. chompWhile (\c -> not <| Char.isDigit c)
                         |= int
+                        |= parseFacets
                 )
                 orderedDomains
 
         doneAtTheEnd =
-            succeed () |> map (\_ -> Done parsedDescriptions)
+            succeed () |> map (\_ -> Done <| List.reverse parsedDescriptions)
     in
     oneOf
         (List.reverse <|
             doneAtTheEnd
                 :: domainParserList
         )
+
+
+parseFacets : Parser (List Facet)
+parseFacets =
+    loop [] parseFacet
+
+
+parseFacet : List Facet -> Parser (Step (List Facet) (List Facet))
+parseFacet facets =
+    oneOf
+        [ succeed
+            (\s i ->
+                Loop (Facet s i :: facets)
+            )
+            |. chompWhile (\c -> not <| Char.isAlpha c)
+            |= getChompedString (chompUntil ".")
+            |. chompWhile (\c -> not <| Char.isDigit c)
+            |= int
+        , succeed ()
+            |> map (\_ -> Done (List.reverse facets))
+        ]
