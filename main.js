@@ -10688,7 +10688,6 @@ var $elm$browser$Browser$sandbox = function (impl) {
 		});
 };
 var $author$project$Main$ParsingRawData = {$: 'ParsingRawData'};
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Input$Domain = F2(
 	function (a, b) {
 		return {$: 'Domain', a: a, b: b};
@@ -11069,29 +11068,31 @@ var $elm$parser$Parser$Advanced$succeed = function (a) {
 		});
 };
 var $elm$parser$Parser$succeed = $elm$parser$Parser$Advanced$succeed;
-var $author$project$Input$parseDomain = A2(
-	$elm$parser$Parser$keeper,
-	A2(
+var $author$project$Input$parseDomain = function (domain) {
+	return A2(
 		$elm$parser$Parser$keeper,
 		A2(
-			$elm$parser$Parser$ignorer,
-			$elm$parser$Parser$succeed($author$project$Input$Domain),
-			$elm$parser$Parser$chompUntil('EXTRAVERSION')),
-		A2(
-			$elm$parser$Parser$ignorer,
+			$elm$parser$Parser$keeper,
 			A2(
 				$elm$parser$Parser$ignorer,
-				$elm$parser$Parser$getChompedString(
-					$elm$parser$Parser$chompUntil('.')),
-				$elm$parser$Parser$chompIf(
+				$elm$parser$Parser$succeed($author$project$Input$Domain),
+				$elm$parser$Parser$chompUntil(domain)),
+			A2(
+				$elm$parser$Parser$ignorer,
+				A2(
+					$elm$parser$Parser$ignorer,
+					$elm$parser$Parser$getChompedString(
+						$elm$parser$Parser$chompUntil('.')),
+					$elm$parser$Parser$chompIf(
+						function (c) {
+							return !$elm$core$Char$isDigit(c);
+						})),
+				$elm$parser$Parser$chompWhile(
 					function (c) {
 						return !$elm$core$Char$isDigit(c);
-					})),
-			$elm$parser$Parser$chompWhile(
-				function (c) {
-					return !$elm$core$Char$isDigit(c);
-				}))),
-	$elm$parser$Parser$int);
+					}))),
+		$elm$parser$Parser$int);
+};
 var $elm$parser$Parser$DeadEnd = F3(
 	function (row, col, problem) {
 		return {col: col, problem: problem, row: row};
@@ -11152,7 +11153,10 @@ var $elm$parser$Parser$run = F2(
 		}
 	});
 var $author$project$Input$parse = function (rawData) {
-	return A2($elm$parser$Parser$run, $author$project$Input$parseDomain, rawData);
+	return A2(
+		$elm$parser$Parser$run,
+		$author$project$Input$parseDomain('EXTRAVERSION'),
+		rawData);
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -11171,9 +11175,7 @@ var $author$project$Main$update = F2(
 						_List_Nil);
 				} else {
 					var listOfDeadends = _v2.a;
-					return _Utils_Tuple2(
-						$elm$core$Maybe$Nothing,
-						A2($elm$core$Debug$log, 'parserFeedback', listOfDeadends));
+					return _Utils_Tuple2($elm$core$Maybe$Nothing, listOfDeadends);
 				}
 			}();
 			var maybeParsedDomain = _v1.a;

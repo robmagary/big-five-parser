@@ -19,13 +19,13 @@ type alias Description =
 
 parse : String -> Result (List DeadEnd) Domain
 parse rawData =
-    run parseDomain rawData
+    run (parseDomain "EXTRAVERSION") rawData
 
 
-parseDomain : Parser Domain
-parseDomain =
+parseDomain : String -> Parser Domain
+parseDomain domain =
     succeed Domain
-        |. chompUntil "EXTRAVERSION"
+        |. chompUntil domain
         |= getChompedString (chompUntil ".")
         |. chompIf (\c -> not <| Char.isDigit c)
         |. chompWhile (\c -> not <| Char.isDigit c)
