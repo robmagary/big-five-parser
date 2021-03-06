@@ -1,38 +1,64 @@
 module Main exposing (Msg(..), main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, h1, label, span, text, textarea)
+import Html.Attributes exposing (class, for, id, rows)
 import Html.Events exposing (onClick)
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox { init = 0, update = update, view = view }
+    Browser.sandbox { init = InputtingRawData, update = update, view = view }
 
 
 type Msg
-    = Increment
-    | Decrement
+    = ParseRawData
 
 
 type alias Model =
-    Int
+    UiState
+
+
+type UiState
+    = InputtingRawData
+    | ParsingRawData
+
+
+uiStateToString : UiState -> String
+uiStateToString state =
+    case state of
+        InputtingRawData ->
+            "Inputting Data"
+
+        ParsingRawData ->
+            "Parsing..."
 
 
 update : Msg -> Model -> Model
-update msg model =
+update msg _ =
     case msg of
-        Increment ->
-            model + 1
-
-        Decrement ->
-            model - 1
+        ParseRawData ->
+            ParsingRawData
 
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ button [ onClick Decrement ] [ text "-" ]
-        , div [] [ text (String.fromInt model) ]
-        , button [ onClick Increment ] [ text "+" ]
+    let
+        textAresId =
+            "parserTextarea"
+    in
+    div [ class "container pt-3" ]
+        [ div []
+            [ div [ class "d-flex  justify-content-between align-items-center" ]
+                [ h1 [] [ text "Big 5 Parser" ]
+                , span [ class "badge bg-primary" ] [ text <| uiStateToString model ]
+                ]
+            , label [ for textAresId, class "form-label" ] [ text "Parser Input" ]
+            , textarea [ id textAresId, class "form-control mb-3", rows 10 ] []
+            , button
+                [ class "btn btn-primary"
+                , onClick ParseRawData
+                ]
+                [ text "Parse" ]
+            ]
         ]
