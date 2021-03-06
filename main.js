@@ -10688,11 +10688,9 @@ var $elm$browser$Browser$sandbox = function (impl) {
 		});
 };
 var $author$project$Main$ParsingRawData = {$: 'ParsingRawData'};
-var $author$project$Input$Domain = F2(
-	function (a, b) {
-		return {$: 'Domain', a: a, b: b};
-	});
-var $elm$parser$Parser$UnexpectedChar = {$: 'UnexpectedChar'};
+var $elm$parser$Parser$Advanced$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
 var $elm$parser$Parser$Advanced$Bad = F2(
 	function (a, b) {
 		return {$: 'Bad', a: a, b: b};
@@ -10701,9 +10699,128 @@ var $elm$parser$Parser$Advanced$Good = F3(
 	function (a, b, c) {
 		return {$: 'Good', a: a, b: b, c: c};
 	});
-var $elm$parser$Parser$Advanced$Parser = function (a) {
-	return {$: 'Parser', a: a};
+var $elm$parser$Parser$Advanced$loopHelp = F4(
+	function (p, state, callback, s0) {
+		loopHelp:
+		while (true) {
+			var _v0 = callback(state);
+			var parse = _v0.a;
+			var _v1 = parse(s0);
+			if (_v1.$ === 'Good') {
+				var p1 = _v1.a;
+				var step = _v1.b;
+				var s1 = _v1.c;
+				if (step.$ === 'Loop') {
+					var newState = step.a;
+					var $temp$p = p || p1,
+						$temp$state = newState,
+						$temp$callback = callback,
+						$temp$s0 = s1;
+					p = $temp$p;
+					state = $temp$state;
+					callback = $temp$callback;
+					s0 = $temp$s0;
+					continue loopHelp;
+				} else {
+					var result = step.a;
+					return A3($elm$parser$Parser$Advanced$Good, p || p1, result, s1);
+				}
+			} else {
+				var p1 = _v1.a;
+				var x = _v1.b;
+				return A2($elm$parser$Parser$Advanced$Bad, p || p1, x);
+			}
+		}
+	});
+var $elm$parser$Parser$Advanced$loop = F2(
+	function (state, callback) {
+		return $elm$parser$Parser$Advanced$Parser(
+			function (s) {
+				return A4($elm$parser$Parser$Advanced$loopHelp, false, state, callback, s);
+			});
+	});
+var $elm$parser$Parser$Advanced$map = F2(
+	function (func, _v0) {
+		var parse = _v0.a;
+		return $elm$parser$Parser$Advanced$Parser(
+			function (s0) {
+				var _v1 = parse(s0);
+				if (_v1.$ === 'Good') {
+					var p = _v1.a;
+					var a = _v1.b;
+					var s1 = _v1.c;
+					return A3(
+						$elm$parser$Parser$Advanced$Good,
+						p,
+						func(a),
+						s1);
+				} else {
+					var p = _v1.a;
+					var x = _v1.b;
+					return A2($elm$parser$Parser$Advanced$Bad, p, x);
+				}
+			});
+	});
+var $elm$parser$Parser$map = $elm$parser$Parser$Advanced$map;
+var $elm$parser$Parser$Advanced$Done = function (a) {
+	return {$: 'Done', a: a};
 };
+var $elm$parser$Parser$Advanced$Loop = function (a) {
+	return {$: 'Loop', a: a};
+};
+var $elm$parser$Parser$toAdvancedStep = function (step) {
+	if (step.$ === 'Loop') {
+		var s = step.a;
+		return $elm$parser$Parser$Advanced$Loop(s);
+	} else {
+		var a = step.a;
+		return $elm$parser$Parser$Advanced$Done(a);
+	}
+};
+var $elm$parser$Parser$loop = F2(
+	function (state, callback) {
+		return A2(
+			$elm$parser$Parser$Advanced$loop,
+			state,
+			function (s) {
+				return A2(
+					$elm$parser$Parser$map,
+					$elm$parser$Parser$toAdvancedStep,
+					callback(s));
+			});
+	});
+var $author$project$Input$Domain = F2(
+	function (a, b) {
+		return {$: 'Domain', a: a, b: b};
+	});
+var $elm$parser$Parser$Done = function (a) {
+	return {$: 'Done', a: a};
+};
+var $elm$parser$Parser$Loop = function (a) {
+	return {$: 'Loop', a: a};
+};
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$parser$Parser$UnexpectedChar = {$: 'UnexpectedChar'};
 var $elm$parser$Parser$Advanced$AddRight = F2(
 	function (a, b) {
 		return {$: 'AddRight', a: a, b: b};
@@ -10834,6 +10951,8 @@ var $elm$parser$Parser$Advanced$chompWhile = function (isGood) {
 		});
 };
 var $elm$parser$Parser$chompWhile = $elm$parser$Parser$Advanced$chompWhile;
+var $author$project$Input$domains = _List_fromArray(
+	['EXTRAVERSION', 'OPENNESS TO EXPERIENCE', 'NEUROTICISM', 'AGREEABLENESS', 'CONSCIENTIOUSNESS']);
 var $elm$parser$Parser$Advanced$mapChompedString = F2(
 	function (func, _v0) {
 		var parse = _v0.a;
@@ -11061,6 +11180,50 @@ var $elm$parser$Parser$Advanced$keeper = F2(
 		return A3($elm$parser$Parser$Advanced$map2, $elm$core$Basics$apL, parseFunc, parseArg);
 	});
 var $elm$parser$Parser$keeper = $elm$parser$Parser$Advanced$keeper;
+var $elm$core$String$lines = _String_lines;
+var $elm$parser$Parser$Advanced$Append = F2(
+	function (a, b) {
+		return {$: 'Append', a: a, b: b};
+	});
+var $elm$parser$Parser$Advanced$oneOfHelp = F3(
+	function (s0, bag, parsers) {
+		oneOfHelp:
+		while (true) {
+			if (!parsers.b) {
+				return A2($elm$parser$Parser$Advanced$Bad, false, bag);
+			} else {
+				var parse = parsers.a.a;
+				var remainingParsers = parsers.b;
+				var _v1 = parse(s0);
+				if (_v1.$ === 'Good') {
+					var step = _v1;
+					return step;
+				} else {
+					var step = _v1;
+					var p = step.a;
+					var x = step.b;
+					if (p) {
+						return step;
+					} else {
+						var $temp$s0 = s0,
+							$temp$bag = A2($elm$parser$Parser$Advanced$Append, bag, x),
+							$temp$parsers = remainingParsers;
+						s0 = $temp$s0;
+						bag = $temp$bag;
+						parsers = $temp$parsers;
+						continue oneOfHelp;
+					}
+				}
+			}
+		}
+	});
+var $elm$parser$Parser$Advanced$oneOf = function (parsers) {
+	return $elm$parser$Parser$Advanced$Parser(
+		function (s) {
+			return A3($elm$parser$Parser$Advanced$oneOfHelp, s, $elm$parser$Parser$Advanced$Empty, parsers);
+		});
+};
+var $elm$parser$Parser$oneOf = $elm$parser$Parser$Advanced$oneOf;
 var $elm$parser$Parser$Advanced$succeed = function (a) {
 	return $elm$parser$Parser$Advanced$Parser(
 		function (s) {
@@ -11068,30 +11231,81 @@ var $elm$parser$Parser$Advanced$succeed = function (a) {
 		});
 };
 var $elm$parser$Parser$succeed = $elm$parser$Parser$Advanced$succeed;
-var $author$project$Input$parseDomain = function (domain) {
+var $author$project$Input$parseDomain = F2(
+	function (rawData, parsedDomains) {
+		var orderedDomains = A3(
+			$elm$core$List$foldl,
+			F2(
+				function (line, ordered) {
+					var matchingDomain = A3(
+						$elm$core$List$foldl,
+						F2(
+							function (domain, matchedDomain) {
+								return A2($elm$core$String$startsWith, domain, line) ? domain : matchedDomain;
+							}),
+						'',
+						$author$project$Input$domains);
+					return A2(
+						$elm$core$List$any,
+						function (domain) {
+							return A2($elm$core$String$startsWith, domain, line);
+						},
+						$author$project$Input$domains) ? A2($elm$core$List$cons, matchingDomain, ordered) : ordered;
+				}),
+			_List_Nil,
+			$elm$core$String$lines(rawData));
+		var doneAtTheEnd = A2(
+			$elm$parser$Parser$map,
+			function (_v0) {
+				return $elm$parser$Parser$Done(parsedDomains);
+			},
+			$elm$parser$Parser$succeed(_Utils_Tuple0));
+		var domainParserList = A2(
+			$elm$core$List$map,
+			function (domainString) {
+				return A2(
+					$elm$parser$Parser$keeper,
+					A2(
+						$elm$parser$Parser$keeper,
+						A2(
+							$elm$parser$Parser$ignorer,
+							$elm$parser$Parser$succeed(
+								F2(
+									function (d, i) {
+										return $elm$parser$Parser$Loop(
+											$elm$core$List$reverse(
+												A2(
+													$elm$core$List$cons,
+													A2($author$project$Input$Domain, d, i),
+													parsedDomains)));
+									})),
+							$elm$parser$Parser$chompUntil(domainString)),
+						A2(
+							$elm$parser$Parser$ignorer,
+							A2(
+								$elm$parser$Parser$ignorer,
+								$elm$parser$Parser$getChompedString(
+									$elm$parser$Parser$chompUntil('.')),
+								$elm$parser$Parser$chompIf(
+									function (c) {
+										return !$elm$core$Char$isDigit(c);
+									})),
+							$elm$parser$Parser$chompWhile(
+								function (c) {
+									return !$elm$core$Char$isDigit(c);
+								}))),
+					$elm$parser$Parser$int);
+			},
+			orderedDomains);
+		return $elm$parser$Parser$oneOf(
+			$elm$core$List$reverse(
+				A2($elm$core$List$cons, doneAtTheEnd, domainParserList)));
+	});
+var $author$project$Input$parseDomains = function (rawData) {
 	return A2(
-		$elm$parser$Parser$keeper,
-		A2(
-			$elm$parser$Parser$keeper,
-			A2(
-				$elm$parser$Parser$ignorer,
-				$elm$parser$Parser$succeed($author$project$Input$Domain),
-				$elm$parser$Parser$chompUntil(domain)),
-			A2(
-				$elm$parser$Parser$ignorer,
-				A2(
-					$elm$parser$Parser$ignorer,
-					$elm$parser$Parser$getChompedString(
-						$elm$parser$Parser$chompUntil('.')),
-					$elm$parser$Parser$chompIf(
-						function (c) {
-							return !$elm$core$Char$isDigit(c);
-						})),
-				$elm$parser$Parser$chompWhile(
-					function (c) {
-						return !$elm$core$Char$isDigit(c);
-					}))),
-		$elm$parser$Parser$int);
+		$elm$parser$Parser$loop,
+		_List_Nil,
+		$author$project$Input$parseDomain(rawData));
 };
 var $elm$parser$Parser$DeadEnd = F3(
 	function (row, col, problem) {
@@ -11155,7 +11369,7 @@ var $elm$parser$Parser$run = F2(
 var $author$project$Input$parse = function (rawData) {
 	return A2(
 		$elm$parser$Parser$run,
-		$author$project$Input$parseDomain('EXTRAVERSION'),
+		$author$project$Input$parseDomains(rawData),
 		rawData);
 };
 var $author$project$Main$update = F2(

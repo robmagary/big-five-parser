@@ -23,7 +23,7 @@ type Msg
 
 
 type alias Model =
-    { domain : Maybe Input.Domain
+    { domain : Maybe (List Input.Domain)
     , parserFeedback : List DeadEnd
     , rawData : String
     , uiState : UiState
