@@ -2,21 +2,41 @@ module Main exposing (Msg(..), main, update, view)
 
 import Browser
 import Html exposing (Html, button, div, h1, label, span, text, textarea)
-import Html.Attributes exposing (class, for, id, rows)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, for, id, rows, value)
+import Html.Events exposing (onClick, onInput)
+import Input
+import Parser exposing (DeadEnd)
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox { init = InputtingRawData, update = update, view = view }
+    Browser.sandbox
+        { init = init
+        , update = update
+        , view = view
+        }
 
 
 type Msg
-    = ParseRawData
+    = DataInput String
+    | ParseRawData
 
 
 type alias Model =
-    UiState
+    { domain : Maybe Input.Domain
+    , parserFeedback : List DeadEnd
+    , rawData : String
+    , uiState : UiState
+    }
+
+
+init : Model
+init =
+    { domain = Nothing
+    , parserFeedback = []
+    , rawData = ""
+    , uiState = InputtingRawData
+    }
 
 
 type UiState
@@ -35,10 +55,30 @@ uiStateToString state =
 
 
 update : Msg -> Model -> Model
-update msg _ =
+update msg model =
     case msg of
+        DataInput input ->
+            { model | rawData = input }
+
         ParseRawData ->
-            ParsingRawData
+            let
+                ( maybeParsedDomain, maybeFeedback ) =
+                    case Input.parse model.rawData of
+                        Ok parsedDomain ->
+                            ( Just parsedDomain
+                            , []
+                            )
+
+                        Err listOfDeadends ->
+                            ( Nothing
+                            , Debug.log "parserFeedback" listOfDeadends
+                            )
+            in
+            { model
+                | uiState = ParsingRawData
+                , domain = maybeParsedDomain
+                , parserFeedback = maybeFeedback
+            }
 
 
 view : Model -> Html Msg
@@ -51,10 +91,17 @@ view model =
         [ div []
             [ div [ class "d-flex  justify-content-between align-items-center" ]
                 [ h1 [] [ text "Big 5 Parser" ]
-                , span [ class "badge bg-primary" ] [ text <| uiStateToString model ]
+                , span [ class "badge bg-primary" ] [ text <| uiStateToString model.uiState ]
                 ]
             , label [ for textAresId, class "form-label" ] [ text "Parser Input" ]
-            , textarea [ id textAresId, class "form-control mb-3", rows 10 ] []
+            , textarea
+                [ id textAresId
+                , class "form-control mb-3"
+                , rows 10
+                , value model.rawData
+                , onInput DataInput
+                ]
+                []
             , button
                 [ class "btn btn-primary"
                 , onClick ParseRawData
