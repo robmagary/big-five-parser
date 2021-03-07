@@ -1,6 +1,6 @@
 module Type.Description exposing (Description, parse, parseList, parser)
 
-import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompIf, chompUntil, chompWhile, getChompedString, int, run, succeed)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompUntil, run, succeed)
 import Type.Domain as Domain exposing (Domain(..))
 import Type.Facet as Facet exposing (Facet(..))
 

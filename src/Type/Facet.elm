@@ -1,4 +1,4 @@
-module Type.Facet exposing (Facet(..), Label(..), Score(..), create, parseList)
+module Type.Facet exposing (Facet(..), Label(..), Score(..), create, parseList, toString)
 
 import Parser exposing ((|.), (|=), Parser, Step(..), chompUntil, chompWhile, getChompedString, int, loop, map, oneOf, succeed)
 
@@ -44,3 +44,8 @@ parse facets =
 create : ( String, Int ) -> Facet
 create ( l, s ) =
     Facet (Label l) (Score s)
+
+
+toString : Facet -> String
+toString (Facet (Label l) (Score s)) =
+    String.join " " [ l, "–", String.fromInt s ]
