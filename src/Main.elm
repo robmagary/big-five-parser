@@ -1,7 +1,7 @@
 module Main exposing (Msg(..), main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, h1, label, span, text, textarea)
+import Html exposing (Html, button, div, h1, label, li, ol, span, text, textarea)
 import Html.Attributes exposing (class, for, id, rows, value)
 import Html.Events exposing (onClick, onInput)
 import Parser exposing (DeadEnd)
@@ -24,26 +24,22 @@ type Msg
 
 
 type alias Model =
-    { descriptions : Maybe (List Description)
-    , parserFeedback : List DeadEnd
-    , rawData : String
+    { rawData : String
     , uiState : UiState
     }
 
 
 init : Model
 init =
-    { descriptions = Nothing
-    , parserFeedback = []
-    , rawData = ""
+    { rawData = ""
     , uiState = InputtingRawData
     }
 
 
 type UiState
     = InputtingRawData
-    | InputDataError String
-    | ReviewingResult
+    | DataParseError (List DeadEnd)
+    | ReviewingResult (List Description)
 
 
 uiStateToString : UiState -> String
@@ -52,10 +48,10 @@ uiStateToString state =
         InputtingRawData ->
             "Inputting Data"
 
-        InputDataError error ->
-            error
+        DataParseError _ ->
+            "Data Parse Error"
 
-        ReviewingResult ->
+        ReviewingResult _ ->
             "Reviewing Parse Result"
 
 
@@ -84,55 +80,85 @@ update msg model =
                             , ( d5, section5 )
                             ]
 
-                        ( maybeParsedDescriptions, maybeFeedback ) =
+                        newUiState =
                             case Description.parseList descriptionSectionList of
                                 Ok parsedDescriptions ->
-                                    ( Just parsedDescriptions
-                                    , []
-                                    )
+                                    ReviewingResult parsedDescriptions
 
                                 Err listOfDeadends ->
-                                    ( Nothing
-                                    , listOfDeadends
-                                    )
+                                    DataParseError listOfDeadends
                     in
                     { model
-                        | uiState = ReviewingResult
-                        , descriptions = maybeParsedDescriptions
-                        , parserFeedback = maybeFeedback
+                        | uiState = newUiState
                     }
 
                 _ ->
                     { model
-                        | uiState = InputDataError "Input data has a problem with domains"
+                        | uiState = DataParseError []
                     }
 
 
 view : Model -> Html Msg
 view model =
-    let
-        textAresId =
-            "parserTextarea"
-    in
     div [ class "container pt-3" ]
-        [ div []
-            [ div [ class "d-flex  justify-content-between align-items-center" ]
+        [ div [] <|
+            div [ class "d-flex  justify-content-between align-items-center" ]
                 [ h1 [] [ text "Big 5 Parser" ]
                 , span [ class "badge bg-primary" ] [ text <| uiStateToString model.uiState ]
                 ]
-            , label [ for textAresId, class "form-label" ] [ text "Parser Input" ]
-            , textarea
-                [ id textAresId
-                , class "form-control mb-3"
-                , rows 10
-                , value model.rawData
-                , onInput DataInput
-                ]
-                []
-            , button
-                [ class "btn btn-primary"
-                , onClick ParseRawData
-                ]
-                [ text "Parse" ]
-            ]
+                :: renderUiByState model
         ]
+
+
+renderUiByState : Model -> List (Html Msg)
+renderUiByState model =
+    let
+        rawData =
+            model.rawData
+
+        uiState =
+            model.uiState
+    in
+    case uiState of
+        InputtingRawData ->
+            renderInputtingUi rawData
+
+        DataParseError deadEndList ->
+            [ text "Oh no, deadend" ]
+
+        ReviewingResult descriptionList ->
+            renderParseResult descriptionList
+
+
+renderInputtingUi : String -> List (Html Msg)
+renderInputtingUi rawData =
+    let
+        textAreaId =
+            "parserTextarea"
+    in
+    [ label [ for textAreaId, class "form-label" ] [ text "Parser Input" ]
+    , textarea
+        [ id textAreaId
+        , class "form-control mb-3"
+        , rows 10
+        , value rawData
+        , onInput DataInput
+        ]
+        []
+    , button
+        [ class "btn btn-primary"
+        , onClick ParseRawData
+        ]
+        [ text "Parse" ]
+    ]
+
+
+renderParseResult : List Description -> List (Html msg)
+renderParseResult descriptionList =
+    [ ol [] <|
+        List.map
+            (\description ->
+                li [] [ text <| Domain.toString description.domain ]
+            )
+            descriptionList
+    ]

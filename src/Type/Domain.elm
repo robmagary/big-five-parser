@@ -1,4 +1,4 @@
-module Type.Domain exposing (Domain(..), Label(..), Score(..), list, orderList, parser)
+module Type.Domain exposing (Domain(..), Label(..), Score(..), list, orderList, parser, toString)
 
 import Parser exposing ((|.), (|=), Parser, Step(..), chompIf, chompUntil, chompWhile, getChompedString, int, succeed)
 
@@ -80,3 +80,8 @@ parser =
         |. chompIf (\c -> not <| Char.isDigit c)
         |. chompWhile (\c -> not <| Char.isDigit c)
         |= int
+
+
+toString : Domain -> String
+toString (Domain (Label l) (Score s)) =
+    String.join " " [ l, "–", String.fromInt s ]
