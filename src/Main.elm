@@ -4,8 +4,9 @@ import Browser
 import Html exposing (Html, button, div, h1, label, span, text, textarea)
 import Html.Attributes exposing (class, for, id, rows, value)
 import Html.Events exposing (onClick, onInput)
-import Input
 import Parser exposing (DeadEnd)
+import Type.Description as Description exposing (Description)
+import Type.Domain as Domain
 
 
 main : Program () Model Msg
@@ -23,7 +24,7 @@ type Msg
 
 
 type alias Model =
-    { descriptions : Maybe (List Input.Description)
+    { descriptions : Maybe (List Description)
     , parserFeedback : List DeadEnd
     , rawData : String
     , uiState : UiState
@@ -67,7 +68,7 @@ update msg model =
         ParseRawData ->
             let
                 maybeOrderedDomains =
-                    Input.orderDomains Input.domains model.rawData
+                    Domain.orderList Domain.list model.rawData
 
                 sectionedRawData =
                     String.split "Domain/Facet...... Score" model.rawData
@@ -84,7 +85,7 @@ update msg model =
                             ]
 
                         ( maybeParsedDescriptions, maybeFeedback ) =
-                            case Input.parseDescriptions descriptionSectionList of
+                            case Description.parseList descriptionSectionList of
                                 Ok parsedDescriptions ->
                                     ( Just parsedDescriptions
                                     , []
