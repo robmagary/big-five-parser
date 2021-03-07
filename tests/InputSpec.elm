@@ -1,7 +1,7 @@
 module InputSpec exposing (suite)
 
 import Expect
-import Input exposing (parse)
+import Input exposing (DomainLabel(..), DomainScore(..), Facet(..), parse)
 import Test exposing (Test, describe, test)
 import TestData
 
@@ -9,20 +9,20 @@ import TestData
 suite : Test
 suite =
     describe "Parsing Descriptions"
-        [ test "Single domain data parses EXTRAVERSION 64"
+        [ test "Single domain data parses EXTRAVERSION 64 and 6 Facets"
             (\_ ->
-                Expect.equal
-                    (Ok [ Input.Description (Input.Domain "EXTRAVERSION" 64) [] ])
-                    (parse TestData.singleDomainData)
-            )
-        , test "Multiple domains data parses EXTRAVERSION 64 and AGREEABLENESS 66"
-            (\_ ->
-                Expect.equal
-                    (Ok
-                        [ Input.Description (Input.Domain "EXTRAVERSION" 64) []
-                        , Input.Description (Input.Domain "AGREEABLENESS" 66) []
+                let
+                    facetResults =
+                        [ Facet "Friendliness" 75
+                        , Facet "Gregariousness" 64
+                        , Facet "Assertiveness" 50
+                        , Facet "Activity Level" 57
+                        , Facet "Excitement-Seeking" 41
+                        , Facet "Cheerfulness" 67
                         ]
-                    )
-                    (parse TestData.multipleDomains)
+                in
+                Expect.equal
+                    (Ok <| Input.Description (Input.Domain (DomainLabel "EXTRAVERSION") (DomainScore 64)) facetResults)
+                    (parse (DomainLabel "EXTRAVERSION") TestData.singleDomainData)
             )
         ]

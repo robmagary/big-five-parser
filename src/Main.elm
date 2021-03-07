@@ -41,7 +41,8 @@ init =
 
 type UiState
     = InputtingRawData
-    | ParsingRawData
+    | InputDataError String
+    | ReviewingResult
 
 
 uiStateToString : UiState -> String
@@ -50,8 +51,11 @@ uiStateToString state =
         InputtingRawData ->
             "Inputting Data"
 
-        ParsingRawData ->
-            "Parsing..."
+        InputDataError error ->
+            error
+
+        ReviewingResult ->
+            "Reviewing Parse Result"
 
 
 update : Msg -> Model -> Model
@@ -62,23 +66,45 @@ update msg model =
 
         ParseRawData ->
             let
-                ( maybeParsedDescriptions, maybeFeedback ) =
-                    case Input.parse model.rawData of
-                        Ok parsedDescriptions ->
-                            ( Just parsedDescriptions
-                            , []
-                            )
+                maybeOrderedDomains =
+                    Input.orderDomains Input.domains model.rawData
 
-                        Err listOfDeadends ->
-                            ( Nothing
-                            , listOfDeadends
-                            )
+                sectionedRawData =
+                    String.split "Domain/Facet...... Score" model.rawData
             in
-            { model
-                | uiState = ParsingRawData
-                , descriptions = maybeParsedDescriptions
-                , parserFeedback = maybeFeedback
-            }
+            case ( maybeOrderedDomains, sectionedRawData ) of
+                ( Just [ d1, d2, d3, d4, d5 ], [ _, section1, section2, section3, section4, section5 ] ) ->
+                    let
+                        descriptionSectionList =
+                            [ ( d1, section1 )
+                            , ( d2, section2 )
+                            , ( d3, section3 )
+                            , ( d4, section4 )
+                            , ( d5, section5 )
+                            ]
+
+                        ( maybeParsedDescriptions, maybeFeedback ) =
+                            case Input.parseDescriptions descriptionSectionList of
+                                Ok parsedDescriptions ->
+                                    ( Just parsedDescriptions
+                                    , []
+                                    )
+
+                                Err listOfDeadends ->
+                                    ( Nothing
+                                    , listOfDeadends
+                                    )
+                    in
+                    { model
+                        | uiState = ReviewingResult
+                        , descriptions = maybeParsedDescriptions
+                        , parserFeedback = maybeFeedback
+                    }
+
+                _ ->
+                    { model
+                        | uiState = InputDataError "Input data has a problem with domains"
+                    }
 
 
 view : Model -> Html Msg
