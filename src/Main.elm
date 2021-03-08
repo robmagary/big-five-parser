@@ -4,6 +4,7 @@ import Browser
 import Html exposing (Html, button, div, form, h1, input, label, li, ol, pre, span, text, textarea, ul)
 import Html.Attributes exposing (class, for, id, rows, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
+import Http
 import Json.Encode as Encode
 import Parser exposing (DeadEnd)
 import Type.Description as Description exposing (Description)
@@ -14,8 +15,9 @@ import Type.Submission as Submission exposing (Submission)
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
+    Browser.element
         { init = init
+        , subscriptions = subscriptions
         , update = update
         , view = view
         }
@@ -24,6 +26,7 @@ main =
 type Msg
     = CreateSubmision
     | DataInput String
+    | GotSubmissionResponse (Result Http.Error String)
     | ParseRawData
     | ResetUi
     | SendSubmission
@@ -38,11 +41,16 @@ type alias Model =
     }
 
 
-init : Model
-init =
+initModel : Model
+initModel =
     { rawData = ""
     , uiState = InputtingRawData
     }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( initModel, Cmd.none )
 
 
 type UiState
@@ -52,6 +60,7 @@ type UiState
     | CreatingSubmission Submission
     | VerifyingSubmission Submission
     | WaitingOnResults
+    | DisplayingResults String
 
 
 uiStateToString : UiState -> String
@@ -75,22 +84,48 @@ uiStateToString state =
         WaitingOnResults ->
             "Waiting on Results"
 
+        DisplayingResults _ ->
+            "Displaying Results"
 
-update : Msg -> Model -> Model
+
+subscriptions : Model -> Sub msg
+subscriptions _ =
+    Sub.none
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CreateSubmision ->
             case model.uiState of
                 ReviewingResult descriptions ->
-                    { model
+                    ( { model
                         | uiState = CreatingSubmission (Submission.init descriptions)
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
         DataInput input ->
-            { model | rawData = input }
+            ( { model | rawData = input }, Cmd.none )
+
+        GotSubmissionResponse response ->
+            case response of
+                Ok receiptToken ->
+                    ( { model
+                        | uiState = DisplayingResults receiptToken
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( { model
+                        | uiState = DisplayingResults "Unknown error"
+                      }
+                    , Cmd.none
+                    )
 
         ParseRawData ->
             let
@@ -119,27 +154,44 @@ update msg model =
                                 Err listOfDeadends ->
                                     DataParseError listOfDeadends
                     in
-                    { model
+                    ( { model
                         | uiState = newUiState
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    { model
+                    ( { model
                         | uiState = DataParseError []
-                    }
+                      }
+                    , Cmd.none
+                    )
 
         ResetUi ->
-            init
+            ( initModel, Cmd.none )
 
         SendSubmission ->
             case model.uiState of
-                VerifyingSubmission _ ->
-                    { model
+                VerifyingSubmission submission ->
+                    let
+                        submissionExpect =
+                            Submission.expectReceiptOrMessage GotSubmissionResponse Submission.decode
+
+                        submissionRequest =
+                            Http.post
+                                { url = Submission.postUrl
+                                , body = Http.jsonBody (Submission.encode submission)
+                                , expect = submissionExpect
+                                }
+                    in
+                    ( { model
                         | uiState = WaitingOnResults
-                    }
+                      }
+                    , submissionRequest
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
         UpdateEmail emailString ->
             case model.uiState of
@@ -148,12 +200,14 @@ update msg model =
                         updatedSubmission =
                             { submission | email = emailString }
                     in
-                    { model
+                    ( { model
                         | uiState = CreatingSubmission updatedSubmission
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
         UpdateName nameString ->
             case model.uiState of
@@ -162,22 +216,26 @@ update msg model =
                         updatedSubmission =
                             { submission | name = nameString }
                     in
-                    { model
+                    ( { model
                         | uiState = CreatingSubmission updatedSubmission
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
         VerifySubmission ->
             case model.uiState of
                 CreatingSubmission submission ->
-                    { model
+                    ( { model
                         | uiState = VerifyingSubmission submission
-                    }
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
-                    model
+                    ( model, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -218,7 +276,10 @@ renderUiByState model =
             renderVerifySubmission submission
 
         WaitingOnResults ->
-            renderWaitingOnResults
+            renderWaitingOrResults Nothing
+
+        DisplayingResults resultsMessage ->
+            renderWaitingOrResults (Just resultsMessage)
 
 
 renderInputtingUi : String -> List (Html Msg)
@@ -324,6 +385,9 @@ renderVerifySubmission submission =
     ]
 
 
-renderWaitingOnResults : List (Html msg)
-renderWaitingOnResults =
-    [ div [ class "mt-3 text-center" ] [ text "Waiting..." ] ]
+renderWaitingOrResults : Maybe String -> List (Html msg)
+renderWaitingOrResults maybeResults =
+    [ div
+        [ class "mt-3 text-center" ]
+        [ text <| Maybe.withDefault "Waiting..." maybeResults ]
+    ]
