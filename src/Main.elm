@@ -1,9 +1,10 @@
 module Main exposing (Msg(..), main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, form, h1, input, label, li, ol, span, text, textarea, ul)
+import Html exposing (Html, button, div, form, h1, input, label, li, ol, pre, span, text, textarea, ul)
 import Html.Attributes exposing (class, for, id, rows, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, onSubmit)
+import Json.Encode as Encode
 import Parser exposing (DeadEnd)
 import Type.Description as Description exposing (Description)
 import Type.Domain as Domain
@@ -21,10 +22,14 @@ main =
 
 
 type Msg
-    = DataInput String
+    = CreateSubmision
+    | DataInput String
     | ParseRawData
     | ResetUi
-    | CreateSubmision
+    | SendSubmission
+    | UpdateEmail String
+    | UpdateName String
+    | VerifySubmission
 
 
 type alias Model =
@@ -45,6 +50,8 @@ type UiState
     | DataParseError (List DeadEnd)
     | ReviewingResult (List Description)
     | CreatingSubmission Submission
+    | VerifyingSubmission Submission
+    | WaitingOnResults
 
 
 uiStateToString : UiState -> String
@@ -62,13 +69,16 @@ uiStateToString state =
         CreatingSubmission _ ->
             "Inputting Contact Info"
 
+        VerifyingSubmission _ ->
+            "Verifying Submission"
+
+        WaitingOnResults ->
+            "Waiting on Results"
+
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ResetUi ->
-            init
-
         CreateSubmision ->
             case model.uiState of
                 ReviewingResult descriptions ->
@@ -118,6 +128,57 @@ update msg model =
                         | uiState = DataParseError []
                     }
 
+        ResetUi ->
+            init
+
+        SendSubmission ->
+            case model.uiState of
+                VerifyingSubmission _ ->
+                    { model
+                        | uiState = WaitingOnResults
+                    }
+
+                _ ->
+                    model
+
+        UpdateEmail emailString ->
+            case model.uiState of
+                CreatingSubmission submission ->
+                    let
+                        updatedSubmission =
+                            { submission | email = emailString }
+                    in
+                    { model
+                        | uiState = CreatingSubmission updatedSubmission
+                    }
+
+                _ ->
+                    model
+
+        UpdateName nameString ->
+            case model.uiState of
+                CreatingSubmission submission ->
+                    let
+                        updatedSubmission =
+                            { submission | name = nameString }
+                    in
+                    { model
+                        | uiState = CreatingSubmission updatedSubmission
+                    }
+
+                _ ->
+                    model
+
+        VerifySubmission ->
+            case model.uiState of
+                CreatingSubmission submission ->
+                    { model
+                        | uiState = VerifyingSubmission submission
+                    }
+
+                _ ->
+                    model
+
 
 view : Model -> Html Msg
 view model =
@@ -153,6 +214,12 @@ renderUiByState model =
         CreatingSubmission submission ->
             renderSubmissionForm submission
 
+        VerifyingSubmission submission ->
+            renderVerifySubmission submission
+
+        WaitingOnResults ->
+            renderWaitingOnResults
+
 
 renderInputtingUi : String -> List (Html Msg)
 renderInputtingUi rawData =
@@ -180,7 +247,7 @@ renderInputtingUi rawData =
 nextStepOrRestart : Html Msg -> Html Msg
 nextStepOrRestart nextStep =
     div [ class "d-flex flex-row justify-content-between mt-3 mb-5" ]
-        [ button [ class "btn btn btn-secondary", onClick ResetUi ] [ text "Start Over" ]
+        [ button [ class "btn btn-secondary", onClick ResetUi ] [ text "Start Over" ]
         , nextStep
         ]
 
@@ -219,13 +286,14 @@ renderSubmissionForm submission =
         emailId =
             "emailInput"
     in
-    [ form []
+    [ form [ onSubmit VerifySubmission ]
         [ label [ class "form-label mt-3", for nameId ] [ text "First and Last Name" ]
         , input
             [ class "form-control"
             , id nameId
             , type_ "text"
             , value submission.name
+            , onInput UpdateName
             ]
             []
         , label [ class "form-label mt-3", for emailId ] [ text "Email Address" ]
@@ -234,8 +302,28 @@ renderSubmissionForm submission =
             , id emailId
             , type_ "email"
             , value submission.email
+            , onInput UpdateEmail
             ]
             []
-        , nextStepOrRestart <| input [ class "btn btn-primary mt-3", type_ "submit" ] [ text "Send it" ]
+        , nextStepOrRestart <|
+            input
+                [ class "btn btn-primary"
+                , type_ "submit"
+                , value "Build Request Body"
+                ]
+                []
         ]
     ]
+
+
+renderVerifySubmission : Submission -> List (Html Msg)
+renderVerifySubmission submission =
+    [ pre []
+        [ text <| Encode.encode 4 (Submission.encode submission) ]
+    , nextStepOrRestart <| button [ class "btn btn-primary", onClick SendSubmission ] [ text "Send It!" ]
+    ]
+
+
+renderWaitingOnResults : List (Html msg)
+renderWaitingOnResults =
+    [ div [ class "mt-3 text-center" ] [ text "Waiting..." ] ]

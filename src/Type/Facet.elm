@@ -1,5 +1,6 @@
-module Type.Facet exposing (Facet(..), Label(..), Score(..), create, parseList, toString)
+module Type.Facet exposing (Facet(..), Label(..), Score(..), create, encodeList, parseList, toString)
 
+import Json.Encode as Encode
 import Parser exposing ((|.), (|=), Parser, Step(..), chompUntil, chompWhile, getChompedString, int, loop, map, oneOf, succeed)
 
 
@@ -49,3 +50,17 @@ create ( l, s ) =
 toString : Facet -> String
 toString (Facet (Label l) (Score s)) =
     String.join " " [ l, "–", String.fromInt s ]
+
+
+encodeList : List Facet -> ( String, Encode.Value )
+encodeList facets =
+    let
+        facetList =
+            List.map encode facets
+    in
+    ( "Facets", Encode.object facetList )
+
+
+encode : Facet -> ( String, Encode.Value )
+encode (Facet (Label l) (Score s)) =
+    ( l, Encode.int s )

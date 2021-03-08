@@ -1,5 +1,6 @@
-module Type.Description exposing (Description, parse, parseList, parser)
+module Type.Description exposing (Description, encodeList, parse, parseList, parser)
 
+import Json.Encode as Encode
 import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompUntil, run, succeed)
 import Type.Domain as Domain exposing (Domain(..))
 import Type.Facet as Facet exposing (Facet(..))
@@ -50,3 +51,12 @@ parser (Domain.Label label) =
         |= Domain.parser
         |= Facet.parseList
         |. chompUntil "\n"
+
+
+encodeList : List Description -> List ( String, Encode.Value )
+encodeList descriptions =
+    List.map
+        (\{ domain, facets } ->
+            Domain.encode domain facets
+        )
+        descriptions

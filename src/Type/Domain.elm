@@ -1,6 +1,8 @@
-module Type.Domain exposing (Domain(..), Label(..), Score(..), list, orderList, parser, toString)
+module Type.Domain exposing (Domain(..), Label(..), Score(..), encode, list, orderList, parser, toString)
 
+import Json.Encode as Encode
 import Parser exposing ((|.), (|=), Parser, Step(..), chompIf, chompUntil, chompWhile, getChompedString, int, succeed)
+import Type.Facet as Facet exposing (Facet)
 
 
 type Domain
@@ -85,3 +87,13 @@ parser =
 toString : Domain -> String
 toString (Domain (Label l) (Score s)) =
     String.join " " [ l, "–", String.fromInt s ]
+
+
+encode : Domain -> List Facet -> ( String, Encode.Value )
+encode (Domain (Label l) (Score s)) facets =
+    ( l
+    , Encode.object
+        [ ( "Overall Score", Encode.int s )
+        , Facet.encodeList facets
+        ]
+    )
